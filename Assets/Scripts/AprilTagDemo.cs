@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.XR.ARFoundation;
 
 // AprilTag demo for iPhone and Quest. Acquire, then point the camera at a tag:
@@ -18,6 +19,8 @@ public class AprilTagDemo : MonoBehaviour
     [SerializeField] private Transform fitMarker;
     [SerializeField] private bool singleTagMode;
     [SerializeField] private bool showScreenUi = true;
+    [Tooltip("Scene the on-screen Scene button loads (iPhone); empty hides the button.")]
+    [SerializeField] private string otherSceneName = "iPhone Room";
     [SerializeField] private Color[] tagColors =
     {
         new(0.95f, 0.3f, 0.25f), new(0.3f, 0.8f, 0.35f), new(0.3f, 0.55f, 0.95f),
@@ -206,6 +209,11 @@ public class AprilTagDemo : MonoBehaviour
         if (GUI.Button(new Rect(left + step * 2f, top, buttonWidth, buttonHeight), singleTagMode ? "Mode: Single" : "Mode: Multi", buttonStyle))
         {
             ToggleMode();
+        }
+        if (!string.IsNullOrEmpty(otherSceneName) &&
+            GUI.Button(new Rect(left + step * 3f, top, buttonWidth, buttonHeight), "Scene", buttonStyle))
+        {
+            SceneManager.LoadScene(otherSceneName);
         }
 
         var text = StatusText;

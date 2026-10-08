@@ -16,6 +16,7 @@ public static class SharedARSetup
     // Scenes built for iPhone; the first is the one the app starts in.
     public static readonly string[] IPhoneScenes =
     {
+        "Assets/Scenes/iPhone/iPhone Room.unity",
         "Assets/Scenes/iPhone/iPhone AprilTags.unity",
     };
 
@@ -24,7 +25,8 @@ public static class SharedARSetup
     {
         ConfigurePlayer();
         ConfigureXR();
-        CreateIPhoneSceneIfMissing(IPhoneScenes[0]);
+        CreateIPhoneRoomSceneIfMissing(IPhoneScenes[0]);
+        CreateIPhoneSceneIfMissing(IPhoneScenes[1]);
         AssetDatabase.SaveAssets();
         Debug.Log("[SharedARSetup] iOS configured");
     }
@@ -135,5 +137,69 @@ public static class SharedARSetup
         }
         EditorSceneManager.SaveScene(scene, path);
         Debug.Log($"[SharedARSetup] Created {path}");
+    }
+
+    // A starting point only; once it exists the scene is edited by hand.
+    // RoomAnchor with background scanning, as in the Quest Room scene: a post at
+    // the room origin, markers on placed tags, on-screen controls and status.
+    private static void CreateIPhoneRoomSceneIfMissing(string path)
+    {
+        if (File.Exists(path))
+        {
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (!EditorApplication.ExecuteMenuItem("GameObject/XR/AR Session")
+            || !EditorApplication.ExecuteMenuItem("GameObject/XR/XR Origin (Mobile AR)"))
+        {
+            Debug.LogError("[SharedARSetup] AR Foundation's GameObject > XR menu items were not found; scene not created");
+            return;
+        }
+        var cameraManager = Object.FindAnyObjectByType<UnityEngine.XR.ARFoundation.ARCameraManager>();
+
+        var app = new GameObject("AprilTags");
+        var source = app.AddComponent<ARFoundationCameraSource>();
+        SetField(source, "cameraManager", cameraManager);
+        var localizer = app.AddComponent<AprilTagRoomLocalizer>();
+        SetField(localizer, "cameraSource", source);
+
+        var room = new GameObject("Room");
+        var anchor = room.AddComponent<RoomAnchor>();
+        SetField(anchor, "localizer", localizer);
+
+        // A thin white post standing on the room origin.
+        var origin = new GameObject("Origin");
+        origin.transform.SetParent(room.transform, false);
+        var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        post.name = "Post";
+        post.transform.SetParent(origin.transform, false);
+        post.transform.localPosition = new Vector3(0f, 0.3f, 0f);
+        post.transform.localScale = new Vector3(0.02f, 0.6f, 0.02f);
+        Object.DestroyImmediate(post.GetComponent<Collider>());
+        post.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/FitMarker.mat");
+
+        // Markers on placed tags; the template stays outside the room, whose
+        // children RoomAnchor hides and shows.
+        var template = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        template.name = "Tag Marker Template";
+        template.transform.localScale = Vector3.one * 0.04f;
+        Object.DestroyImmediate(template.GetComponent<Collider>());
+        template.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TagCube.mat");
+        var markers = room.AddComponent<RoomTagMarkers>();
+        SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
+
+        var ui = new GameObject("UI").AddComponent<PhoneRoomUI>();
+        SetField(ui, "roomAnchor", anchor);
+
+        EditorSceneManager.SaveScene(scene, path);
+        Debug.Log($"[SharedARSetup] Created {path}");
+    }
+
+    private static void SetField(Object target, string field, Object value)
+    {
+        var serialized = new SerializedObject(target);
+        serialized.FindProperty(field).objectReferenceValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 }

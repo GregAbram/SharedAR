@@ -29,6 +29,7 @@ public static class SharedARQuestSetup
     // Scenes built for Quest; the first is the one the app starts in.
     public static readonly string[] QuestScenes =
     {
+        "Assets/Scenes/Quest/Quest Room.unity",
         "Assets/Scenes/Quest/Quest AprilTags.unity",
     };
 
@@ -50,7 +51,8 @@ public static class SharedARQuestSetup
         ConfigurePlayer();
         ConfigureXR();
         ApplyMetaProjectSetupFixes();
-        CreateQuestSceneIfMissing(QuestScenes[0]);
+        CreateQuestRoomSceneIfMissing(QuestScenes[0]);
+        CreateQuestSceneIfMissing(QuestScenes[1]);
         // Build And Run in the editor uses this list; the iOS build passes its own.
         EditorBuildSettings.scenes = Array.ConvertAll(QuestScenes, path => new EditorBuildSettingsScene(path, true));
         AssetDatabase.SaveAssets();
@@ -150,9 +152,18 @@ public static class SharedARQuestSetup
             .MakeGenericMethod(taskType)
             .Invoke(null, new object[] { (Func<object, bool>)(task => GetTaskLevel(task, target) >= 1) });
 
+        // (target, filter, log level, blocking, onCompleted); later SDKs add
+        // optional parameters, which get their defaults.
+        var parameters = fixTasks.GetParameters();
+        var args = new object[parameters.Length];
+        object[] known = { target, filter, Enum.ToObject(logMessagesType, 3), true, null };
+        for (var i = 0; i < args.Length; i++)
+        {
+            args[i] = i < known.Length ? known[i] : parameters[i].DefaultValue;
+        }
         for (var pass = 0; pass < 3; pass++)
         {
-            fixTasks.Invoke(null, new[] { target, filter, Enum.ToObject(logMessagesType, 3), true, null });
+            fixTasks.Invoke(null, args);
         }
         Debug.Log("[SharedARQuestSetup] Applied Meta Project Setup Tool fixes (Required + Recommended)");
     }
@@ -168,17 +179,88 @@ public static class SharedARQuestSetup
     }
 
     // A starting point only; once it exists the scene is edited by hand.
+    // AprilTagDemo with Acquire/Reset/Mode on the controller buttons.
     private static void CreateQuestSceneIfMissing(string path)
     {
         if (File.Exists(path))
         {
             return;
         }
-        Directory.CreateDirectory(Path.GetDirectoryName(path));
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var scene = NewScene(path);
+        var (centerEye, localizer, status) = CreateRigAndLocalizer(scene);
 
-        // Camera rig with passthrough as an underlay behind a transparent clear,
-        // camera permission requested at startup.
+        var tagCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        tagCube.name = "Tag Cube Template";
+        tagCube.transform.localScale = Vector3.one * 0.1f;
+        UnityEngine.Object.DestroyImmediate(tagCube.GetComponent<Collider>());
+        tagCube.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TagCube.mat");
+
+        var fitMarker = CreatePost("Fit Marker").transform;
+
+        var demo = localizer.gameObject.AddComponent<AprilTagDemo>();
+        SetField(demo, "localizer", localizer);
+        SetField(demo, "tagCubeTemplate", tagCube.GetComponent<Renderer>());
+        SetField(demo, "fitMarker", fitMarker);
+        var demoSo = new SerializedObject(demo);
+        demoSo.FindProperty("showScreenUi").boolValue = false;
+        demoSo.ApplyModifiedPropertiesWithoutUndo();
+        var input = localizer.gameObject.AddComponent<QuestDemoInput>();
+        SetField(input, "demo", demo);
+        SetField(input, "statusText", status);
+        SetField(input, "head", centerEye);
+
+        EditorSceneManager.SaveScene(scene, path);
+        Debug.Log($"[SharedARQuestSetup] Created {path}");
+    }
+
+    // A starting point only; once it exists the scene is edited by hand.
+    // RoomAnchor with background scanning: a post at the room origin and a
+    // marker on each placed tag (RoomTagMarkers), so placement can be checked by eye.
+    private static void CreateQuestRoomSceneIfMissing(string path)
+    {
+        if (File.Exists(path))
+        {
+            return;
+        }
+        var scene = NewScene(path);
+        var (centerEye, localizer, status) = CreateRigAndLocalizer(scene);
+
+        var room = new GameObject("Room");
+        var anchor = room.AddComponent<RoomAnchor>();
+        SetField(anchor, "localizer", localizer);
+
+        CreatePost("Origin").transform.SetParent(room.transform, false);
+
+        // Markers on placed tags (red measured, green learned); the template
+        // stays outside the room, whose children RoomAnchor hides and shows.
+        var template = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        template.name = "Tag Marker Template";
+        template.transform.localScale = Vector3.one * 0.04f;
+        UnityEngine.Object.DestroyImmediate(template.GetComponent<Collider>());
+        template.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TagCube.mat");
+        var markers = room.AddComponent<RoomTagMarkers>();
+        SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
+
+        var input = localizer.gameObject.AddComponent<QuestRoomInput>();
+        SetField(input, "roomAnchor", anchor);
+        SetField(input, "statusText", status);
+        SetField(input, "head", centerEye);
+
+        EditorSceneManager.SaveScene(scene, path);
+        Debug.Log($"[SharedARQuestSetup] Created {path}");
+    }
+
+    private static UnityEngine.SceneManagement.Scene NewScene(string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        return EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+    }
+
+    // Camera rig with passthrough as an underlay behind a transparent clear and
+    // the camera permission requested at startup; MRUK camera access; the
+    // AprilTags camera source and localizer; a status label for the headset.
+    private static (Transform centerEye, AprilTagRoomLocalizer localizer, TextMeshPro status) CreateRigAndLocalizer(UnityEngine.SceneManagement.Scene scene)
+    {
         var rig = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CameraRigPrefabPath), scene);
         var ovrManager = rig.GetComponent<OVRManager>();
         ovrManager.isInsightPassthroughEnabled = true;
@@ -193,23 +275,6 @@ public static class SharedARQuestSetup
 
         var cameraAccess = new GameObject("PassthroughCameraAccess").AddComponent<PassthroughCameraAccess>();
 
-        var tagCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        tagCube.name = "Tag Cube Template";
-        tagCube.transform.localScale = Vector3.one * 0.1f;
-        UnityEngine.Object.DestroyImmediate(tagCube.GetComponent<Collider>());
-        tagCube.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TagCube.mat");
-
-        // A thin white post standing on the fitted origin: visible even when a
-        // per-tag cube sits in the same spot.
-        var fitMarker = new GameObject("Fit Marker").transform;
-        var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        post.name = "Post";
-        post.transform.SetParent(fitMarker, false);
-        post.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-        post.transform.localScale = new Vector3(0.02f, 0.6f, 0.02f);
-        UnityEngine.Object.DestroyImmediate(post.GetComponent<Collider>());
-        post.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/FitMarker.mat");
-
         var status = new GameObject("Status Text").AddComponent<TextMeshPro>();
         status.fontSize = 0.4f;
         status.alignment = TextAlignmentOptions.TopLeft;
@@ -223,20 +288,21 @@ public static class SharedARQuestSetup
         SetField(source, "cameraAccess", cameraAccess);
         var localizer = app.AddComponent<AprilTagRoomLocalizer>();
         SetField(localizer, "cameraSource", source);
-        var demo = app.AddComponent<AprilTagDemo>();
-        SetField(demo, "localizer", localizer);
-        SetField(demo, "tagCubeTemplate", tagCube.GetComponent<Renderer>());
-        SetField(demo, "fitMarker", fitMarker);
-        var demoSo = new SerializedObject(demo);
-        demoSo.FindProperty("showScreenUi").boolValue = false;
-        demoSo.ApplyModifiedPropertiesWithoutUndo();
-        var input = app.AddComponent<QuestDemoInput>();
-        SetField(input, "demo", demo);
-        SetField(input, "statusText", status);
-        SetField(input, "head", centerEye);
+        return (centerEye, localizer, status);
+    }
 
-        EditorSceneManager.SaveScene(scene, path);
-        Debug.Log($"[SharedARQuestSetup] Created {path}");
+    // A thin white post standing on a point: visible even when a cube sits there.
+    private static GameObject CreatePost(string name)
+    {
+        var marker = new GameObject(name);
+        var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        post.name = "Post";
+        post.transform.SetParent(marker.transform, false);
+        post.transform.localPosition = new Vector3(0f, 0.3f, 0f);
+        post.transform.localScale = new Vector3(0.02f, 0.6f, 0.02f);
+        UnityEngine.Object.DestroyImmediate(post.GetComponent<Collider>());
+        post.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/FitMarker.mat");
+        return marker;
     }
 
     private static void SetField(UnityEngine.Object target, string field, UnityEngine.Object value)

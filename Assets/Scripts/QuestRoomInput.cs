@@ -4,19 +4,29 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Quest controls for AprilTagDemo: A = Acquire/Cancel, B = Reset, X = Mode,
-// Y = switch scene.
-// The demo's status text floats in front of the headset and follows the head
-// smoothly. A light haptic tick confirms each press.
-public class QuestDemoInput : MonoBehaviour
+// Quest controls for the background-scanning RoomAnchor scene: A = scan at full
+// rate now, B = forget this session's observations (re-anchor), X = forget all
+// learned tag positions, Y = switch scene. The anchor's
+// status floats in front of the headset and follows the head smoothly.
+public class QuestRoomInput : MonoBehaviour
 {
-    [SerializeField] private AprilTagDemo demo;
+    [SerializeField] private RoomAnchor roomAnchor;
     [SerializeField] private TextMeshPro statusText;
     [SerializeField] private Transform head;
-    [SerializeField] private string otherSceneName = "Quest Room";
+    [SerializeField] private string otherSceneName = "Quest AprilTags";
     [SerializeField] private float textDistance = 1.2f;
     [SerializeField] private float textDrop = 0.25f;
     [SerializeField] private float followSpeed = 3f;
+
+    private void OnEnable()
+    {
+        roomAnchor.Localized += OnLocalized;
+    }
+
+    private void OnDisable()
+    {
+        roomAnchor.Localized -= OnLocalized;
+    }
 
     private void Awake()
     {
@@ -29,25 +39,25 @@ public class QuestDemoInput : MonoBehaviour
     {
         if (OVRInput.GetDown(OVRInput.Button.One))
         {
-            demo.Acquire();
-            StartCoroutine(Pulse());
+            roomAnchor.Rescan();
+            StartCoroutine(Pulse(0.3f, 0.05f));
         }
         if (OVRInput.GetDown(OVRInput.Button.Two))
         {
-            demo.ResetAll();
-            StartCoroutine(Pulse());
+            roomAnchor.ClearTags();
+            StartCoroutine(Pulse(0.3f, 0.05f));
         }
         if (OVRInput.GetDown(OVRInput.Button.Three))
         {
-            demo.ToggleMode();
-            StartCoroutine(Pulse());
+            roomAnchor.ForgetLearnedTags();
+            StartCoroutine(Pulse(0.3f, 0.05f));
         }
         if (OVRInput.GetDown(OVRInput.Button.Four))
         {
             SceneManager.LoadScene(otherSceneName);
         }
 
-        statusText.text = "A: " + (demo.IsAcquiring ? "Cancel" : "Acquire") + "   B: Reset   X: Mode   Y: other scene\n" + demo.StatusText;
+        statusText.text = "A: scan now   B: re-anchor   X: forget learned   Y: other scene\n" + roomAnchor.StatusText;
 
         // Ease toward a point in front of and slightly below the eyes, facing them.
         var forward = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
@@ -57,10 +67,22 @@ public class QuestDemoInput : MonoBehaviour
         statusText.transform.rotation = Quaternion.LookRotation(statusText.transform.position - head.position, Vector3.up);
     }
 
-    private static IEnumerator Pulse()
+    private bool wasProvisional = true;
+
+    // A firm pulse when the room becomes anchored.
+    private void OnLocalized(RoomAnchor anchor)
     {
-        OVRInput.SetControllerVibration(1f, 0.3f, OVRInput.Controller.Touch);
-        yield return new WaitForSeconds(0.05f);
+        if (wasProvisional && anchor.IsAnchored)
+        {
+            StartCoroutine(Pulse(1f, 0.15f));
+        }
+        wasProvisional = !anchor.IsAnchored;
+    }
+
+    private static IEnumerator Pulse(float amplitude, float seconds)
+    {
+        OVRInput.SetControllerVibration(1f, amplitude, OVRInput.Controller.Touch);
+        yield return new WaitForSeconds(seconds);
         OVRInput.SetControllerVibration(0f, 0f, OVRInput.Controller.Touch);
     }
 }
