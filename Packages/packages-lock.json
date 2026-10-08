@@ -415,13 +415,13 @@
       "url": "https://packages.unity.com"
     },
     "edu.tacc.apriltags": {
-      "version": "https://github.com/GregAbram/AprilTags.git#ff645f34b0f17b4a630708a2832e0337a72e9b18",
+      "version": "https://github.com/GregAbram/AprilTags.git#f12fa65861bbdbc0e25473c563485d2038a19c6a",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.mathematics": "1.3.3"
       },
-      "hash": "ff645f34b0f17b4a630708a2832e0337a72e9b18"
+      "hash": "f12fa65861bbdbc0e25473c563485d2038a19c6a"
     },
     "edu.umn.cs.ivlab.apriltag": {
       "version": "https://github.com/GregAbram/AprilTag-UnityPackage.git#e7fb480608798b693191f989413ca03eef189961",
