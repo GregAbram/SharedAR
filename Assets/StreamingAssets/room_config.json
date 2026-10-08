@@ -1,0 +1,9 @@
+{
+  "room": { "width": 4.61, "depth": 5.0, "height": 2.7 },
+  "tags": [
+    { "id": 9, "x": -4.351, "y": 0.91, "z": -2.460, "yawDegrees": 90,  "sizeMeters": 0.0944 },
+    { "id": 8, "x": -1.11,  "y": 1.39, "z": -0.015, "yawDegrees": 0,   "sizeMeters": 0.0944 },
+    { "id": 7, "x":  0.105, "y": 1.43, "z": -2.240, "yawDegrees": 270, "sizeMeters": 0.0944 },
+    { "id": 6, "x":  0.000, "y": 0.00, "z": 0.00, "yawDegrees": 0, "sizeMeters": 0.0944 }
+  ]
+}
