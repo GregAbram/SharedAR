@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.meta.xr.mrutilitykit": "207.0.0",
+    "com.meta.xr.sdk.core": "207.0.0",
     "com.paraviewlink.unity": "https://github.com/GregAbram/PVLink.git?path=ParaViewLinkUnity#3a5dda2a63d1e107275f454c18dd90c501a27b69",
     "com.unity.feature.development": "1.0.2",
     "com.unity.inputsystem": "1.19.0",
@@ -53,7 +55,7 @@
     "com.unity.xr.management": "4.6.0",
     "com.unity.xr.meta-openxr": "2.5.1",
     "com.unity.xr.openxr": "1.17.1",
-    "edu.tacc.apriltags": "https://github.com/GregAbram/AprilTags.git#44d7ba808513e8412f30ce8578991f6d073100d8",
+    "edu.tacc.apriltags": "https://github.com/GregAbram/AprilTags.git#76d9f892a7a5489b9037ddfb2040d5e3d3012a31",
     "edu.umn.cs.ivlab.apriltag": "https://github.com/GregAbram/AprilTag-UnityPackage.git#e7fb480608798b693191f989413ca03eef189961"
   }
 }
