@@ -55,7 +55,7 @@
     "com.unity.xr.management": "4.6.0",
     "com.unity.xr.meta-openxr": "2.5.1",
     "com.unity.xr.openxr": "1.17.1",
-    "edu.tacc.apriltags": "https://github.com/GregAbram/AprilTags.git#c79bee96f64a4bf1eeeb97924e831a6758a66cbd",
+    "edu.tacc.apriltags": "https://github.com/GregAbram/AprilTags.git#61ed756e8e5c2176351fe84ea84ab7c4a083b425",
     "edu.umn.cs.ivlab.apriltag": "https://github.com/GregAbram/AprilTag-UnityPackage.git#e7fb480608798b693191f989413ca03eef189961"
   }
 }
