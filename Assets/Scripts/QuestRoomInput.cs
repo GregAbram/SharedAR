@@ -6,11 +6,12 @@ using UnityEngine.SceneManagement;
 
 // Quest controls for the background-scanning RoomAnchor scene: A = scan at full
 // rate now, B = forget this session's observations (re-anchor), X = forget all
-// learned tag positions, Y = switch scene. The anchor's
+// learned tag positions, left trigger = scan a room code (QR), Y = switch scene. The anchor's
 // status floats in front of the headset and follows the head smoothly.
 public class QuestRoomInput : MonoBehaviour
 {
     [SerializeField] private RoomAnchor roomAnchor;
+    [SerializeField] private RoomCodeReader roomCodeReader;
     [SerializeField] private TextMeshPro statusText;
     [SerializeField] private Transform head;
     [SerializeField] private string otherSceneName = "Quest Survey";
@@ -52,12 +53,25 @@ public class QuestRoomInput : MonoBehaviour
             roomAnchor.ForgetLearnedTags();
             StartCoroutine(Pulse(0.3f, 0.05f));
         }
+        if (roomCodeReader != null && OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
+        {
+            if (roomCodeReader.IsScanning)
+            {
+                roomCodeReader.CancelScan();
+            }
+            else
+            {
+                roomCodeReader.BeginScan();
+            }
+            StartCoroutine(Pulse(0.3f, 0.05f));
+        }
         if (OVRInput.GetDown(OVRInput.Button.Four))
         {
             SceneManager.LoadScene(otherSceneName);
         }
 
-        statusText.text = "A: scan now   B: re-anchor   X: forget learned   Y: other scene\n" + roomAnchor.StatusText;
+        statusText.text = "A: scan now   B: re-anchor   X: forget learned   L trigger: room code   Y: other scene\n" +
+                          (roomCodeReader != null ? roomCodeReader.StatusLine + "\n" : "") + roomAnchor.StatusText;
 
         // Ease toward a point in front of and slightly below the eyes, facing them.
         var forward = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;

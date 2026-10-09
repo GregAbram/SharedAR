@@ -1203,6 +1203,7 @@ GameObject:
   - component: {fileID: 1721933868}
   - component: {fileID: 1721933867}
   - component: {fileID: 1721933869}
+  - component: {fileID: 1721933871}
   m_Layer: 0
   m_Name: AprilTags
   m_TagString: Untagged
@@ -1259,6 +1260,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestRoomInput
   roomAnchor: {fileID: 1931162990}
+  roomCodeReader: {fileID: 1721933871}
   statusText: {fileID: 1489662748}
   head: {fileID: 1032784157}
   otherSceneName: Quest Survey
@@ -1280,6 +1282,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1721933871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721933866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c4a585d1944412f8dfe0c4b01632ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TaccAprilTags.Runtime::RoomCodeReader
+  localizer: {fileID: 1721933867}
 --- !u!21 &1731412064
 Material:
   serializedVersion: 8

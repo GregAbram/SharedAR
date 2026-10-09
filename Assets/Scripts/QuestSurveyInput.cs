@@ -75,9 +75,12 @@ public class QuestSurveyInput : MonoBehaviour
             return;
         }
         var (path, tags) = roomAnchor.SaveSurveyedConfig();
+        var config = roomAnchor.BuildSurveyedConfig();
+        var codeImage = RoomCodeImage.Save(config);
         saveMessage = tags < 2
             ? $"\nSaved only {tags} tag - learn at least one more before using it."
-            : $"\nSaved {tags} tags to {System.IO.Path.GetFileName(path)}; used from the next start.";
+            : $"\nSaved {tags} tags (survey {RoomCode.SurveyId(config)}) to {System.IO.Path.GetFileName(path)}" +
+              (codeImage != null ? " and room_code.png (print it for the room)." : ".");
         StartCoroutine(Pulse(1f, 0.15f));
     }
 

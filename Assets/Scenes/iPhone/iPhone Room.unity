@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 2447486}
   - component: {fileID: 2447485}
   - component: {fileID: 2447484}
+  - component: {fileID: 2447487}
   m_Layer: 0
   m_Name: AprilTags
   m_TagString: Untagged
@@ -190,6 +191,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2447487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2447483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c4a585d1944412f8dfe0c4b01632ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TaccAprilTags.Runtime::RoomCodeReader
+  localizer: {fileID: 2447484}
 --- !u!1 &101557095
 GameObject:
   m_ObjectHideFlags: 0
@@ -1231,6 +1245,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhoneRoomUI
   roomAnchor: {fileID: 658783566}
+  roomCodeReader: {fileID: 2447487}
   otherSceneName: iPhone Survey
 --- !u!4 &2115124709
 Transform:
