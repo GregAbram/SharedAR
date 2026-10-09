@@ -17,6 +17,7 @@ public static class SharedARSetup
     public static readonly string[] IPhoneScenes =
     {
         "Assets/Scenes/iPhone/iPhone Room.unity",
+        "Assets/Scenes/iPhone/iPhone Survey.unity",
         "Assets/Scenes/iPhone/iPhone AprilTags.unity",
     };
 
@@ -25,8 +26,9 @@ public static class SharedARSetup
     {
         ConfigurePlayer();
         ConfigureXR();
-        CreateIPhoneRoomSceneIfMissing(IPhoneScenes[0]);
-        CreateIPhoneSceneIfMissing(IPhoneScenes[1]);
+        CreateIPhoneRoomSceneIfMissing(IPhoneScenes[0], survey: false);
+        CreateIPhoneRoomSceneIfMissing(IPhoneScenes[1], survey: true);
+        CreateIPhoneSceneIfMissing(IPhoneScenes[2]);
         AssetDatabase.SaveAssets();
         Debug.Log("[SharedARSetup] iOS configured");
     }
@@ -142,7 +144,8 @@ public static class SharedARSetup
     // A starting point only; once it exists the scene is edited by hand.
     // RoomAnchor with background scanning, as in the Quest Room scene: a post at
     // the room origin, markers on placed tags, on-screen controls and status.
-    private static void CreateIPhoneRoomSceneIfMissing(string path)
+    // With survey, RoomAnchor in survey mode and the survey controls instead.
+    private static void CreateIPhoneRoomSceneIfMissing(string path, bool survey)
     {
         if (File.Exists(path))
         {
@@ -167,6 +170,14 @@ public static class SharedARSetup
         var room = new GameObject("Room");
         var anchor = room.AddComponent<RoomAnchor>();
         SetField(anchor, "localizer", localizer);
+        if (survey)
+        {
+            var anchorSo = new SerializedObject(anchor);
+            anchorSo.FindProperty("surveyMode").boolValue = true;
+            // Its own learned file, so a survey never mixes with a Room scene's learning.
+            anchorSo.FindProperty("learnedFileName").stringValue = "survey_tags.json";
+            anchorSo.ApplyModifiedPropertiesWithoutUndo();
+        }
 
         // A thin white post standing on the room origin.
         var origin = new GameObject("Origin");
@@ -189,8 +200,16 @@ public static class SharedARSetup
         var markers = room.AddComponent<RoomTagMarkers>();
         SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
 
-        var ui = new GameObject("UI").AddComponent<PhoneRoomUI>();
-        SetField(ui, "roomAnchor", anchor);
+        if (survey)
+        {
+            var ui = new GameObject("UI").AddComponent<PhoneSurveyUI>();
+            SetField(ui, "roomAnchor", anchor);
+        }
+        else
+        {
+            var ui = new GameObject("UI").AddComponent<PhoneRoomUI>();
+            SetField(ui, "roomAnchor", anchor);
+        }
 
         EditorSceneManager.SaveScene(scene, path);
         Debug.Log($"[SharedARSetup] Created {path}");
