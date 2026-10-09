@@ -240,6 +240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PhoneSurveyUI
   roomAnchor: {fileID: 1162014528}
   otherSceneName: iPhone AprilTags
+  note: a Quest survey is more accurate
 --- !u!4 &422308261
 Transform:
   m_ObjectHideFlags: 0

@@ -12,22 +12,47 @@ MR Utility Kit 207 for Quest. **The editor needs Android Build Support
 installed on every machine, Mac included**: the Meta SDK's editor code doesn't
 compile without it.
 
-## Status
+## Scenes
 
-- **iPhone:** `Assets/Scenes/iPhone/iPhone AprilTags.unity` works on an
-  iPhone 11. Tap **Acquire** and aim at a tag: a colored cube marks the room
-  origin as solved from that tag. **Mode** switches between *Multi* (locks
-  accumulate; with two or more, a white post marks the `RoomFit` best-fit
-  origin, with per-tag residuals on screen) and *Single* (each Acquire forgets
-  earlier locks).
-- **Quest 3:** `Assets/Scenes/Quest/Quest AprilTags.unity`, the same demo on
-  Meta's `OVRCameraRig` with passthrough and MRUK's passthrough camera access
-  (the template's XR Origin isn't used: MRUK reports camera poses in Meta's
-  tracking space, which is Unity world space only under `OVRCameraRig`).
-  Controller buttons: **A** Acquire/Cancel, **B** Reset, **X** Mode; the status
-  floats in front of you. Tested on a Quest 3.
-- **PVLink scene:** not yet.
-- `Assets/Scenes/SampleScene.unity` is the template's sample, kept for reference.
+The localization is the [AprilTags package](https://github.com/GregAbram/AprilTags)
+(`edu.tacc.apriltags` 0.3.0) - see its README for how it works, setting up a
+room, and accuracy. This app is a thin shell around it.
+
+| Scene | Quest 3 | iPhone | What it does |
+|---|---|---|---|
+| **Room** (startup) | `Quest/Quest Room` | `iPhone/iPhone Room` | `RoomAnchor` anchored by fitting two or more tags' positions; content (the magenta reference post, tag cubes) appears once anchored |
+| **Survey** | `Quest/Quest Survey` | `iPhone/iPhone Survey` | Sets a room up: anchor on the configured tag, learn every other tag, save a new `room_config.json` |
+| **AprilTags** | `Quest/Quest AprilTags` | `iPhone/iPhone AprilTags` | The original Acquire demo, for diagnostics |
+| `SampleScene` | | | The Mixed Reality template's sample, kept for reference |
+
+Controls - Quest: **A** scan now, **B** re-anchor, **X** forget learned / start
+over, **right trigger** save (survey), **Y** next scene (Room → Survey →
+AprilTags). iPhone: the same as on-screen buttons, **Scene** to switch.
+
+The magenta post stands on the floor below the center of the surveyed tags:
+mark where one device shows it and compare another device's.
+
+## Setting up a room
+
+1. Hang tagStandard41h12 tags around the room; list one of them (roughly
+   measured, `"measured": true`) in `Assets/StreamingAssets/room_config.json`
+   with `learnUnlistedTags` and `defaultTagSizeMeters`.
+2. On the Quest: Room → **Y** → Survey → **X**; walk within ~1 m of the listed
+   tag until anchored; look at every other tag until each shows *learned*;
+   **right trigger** to save. The Quest uses the result from its next start.
+3. Copy the saved file into the project so every build carries it:
+   `adb pull /sdcard/Android/data/edu.utexas.tacc.sharedar/files/room_config.json Assets/StreamingAssets/`
+   then rebuild both apps.
+
+The current `room_config.json` is the Quest survey of 2026-10-09 (tags 8, 3,
+7, 9). Survey on the Quest rather than the iPhone: the iPhone's single-tag
+orientation varies 1-2.6 deg by viewpoint, and a survey inherits it.
+
+**Logs:** each app writes `sharedar.log` (and `sharedar.prev.log`) to its
+data folder - Quest: `adb pull /sdcard/Android/data/edu.utexas.tacc.sharedar/files/sharedar.log`;
+iPhone: `xcrun devicectl device copy from --device <id> --domain-type
+appDataContainer --domain-identifier edu.utexas.tacc.sharedar --source
+Documents/sharedar.log --destination .` (also visible in Files/Finder).
 
 ## Build and run on iPhone
 
@@ -79,11 +104,9 @@ Meta XR Core SDK 203 breaks iOS player builds (`#define` after code in
 
 ## Room config
 
-`Assets/StreamingAssets/room_config.json` lists the tags (id, room-frame
-position, yaw, printed size); see the
-[AprilTags package](https://github.com/GregAbram/AprilTags) README for the
-format. A `room_config.json` in the app's Documents folder overrides the
-bundled one. Tags must be from the **tagStandard41h12** family.
+`Assets/StreamingAssets/room_config.json`; see the AprilTags package README
+for the format. A `room_config.json` in the app's data folder (written by a
+survey) overrides the bundled one; delete it to revert.
 
 ## Packages
 

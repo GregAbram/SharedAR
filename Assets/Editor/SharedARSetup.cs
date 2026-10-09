@@ -206,13 +206,20 @@ public static class SharedARSetup
         }
         if (survey)
         {
-            var ui = new GameObject("UI").AddComponent<PhoneSurveyUI>();
+            var ui = new GameObject("UI").AddComponent<SurveyScreenUI>();
             SetField(ui, "roomAnchor", anchor);
+            var uiSo = new SerializedObject(ui);
+            uiSo.FindProperty("otherSceneName").stringValue = "iPhone AprilTags";
+            uiSo.FindProperty("note").stringValue = "a Quest survey is more accurate";
+            uiSo.ApplyModifiedPropertiesWithoutUndo();
         }
         else
         {
-            var ui = new GameObject("UI").AddComponent<PhoneRoomUI>();
+            var ui = new GameObject("UI").AddComponent<RoomScreenUI>();
             SetField(ui, "roomAnchor", anchor);
+            var uiSo = new SerializedObject(ui);
+            uiSo.FindProperty("otherSceneName").stringValue = "iPhone Survey";
+            uiSo.ApplyModifiedPropertiesWithoutUndo();
         }
 
         EditorSceneManager.SaveScene(scene, path);
