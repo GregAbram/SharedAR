@@ -1,8 +1,47 @@
 {
-  "room": { "width": 4.61, "depth": 5.0, "height": 2.7 },
-  "learnUnlistedTags": true,
-  "defaultTagSizeMeters": 0.0944,
-  "tags": [
-    { "id": 8, "x": -1.11, "y": 1.39, "z": -0.015, "yawDegrees": 0, "sizeMeters": 0.0944, "measured": true }
-  ]
+    "room": {
+        "width": 4.610000133514404,
+        "depth": 5.0,
+        "height": 2.700000047683716
+    },
+    "tags": [
+        {
+            "id": 8,
+            "x": -1.1100000143051148,
+            "y": 1.3899999856948853,
+            "z": -0.014999999664723874,
+            "yawDegrees": 0.0,
+            "sizeMeters": 0.09440000355243683,
+            "measured": true
+        },
+        {
+            "id": 3,
+            "x": -2.985748529434204,
+            "y": 1.5328586101531983,
+            "z": 0.06456277519464493,
+            "yawDegrees": 2.292611837387085,
+            "sizeMeters": 0.09440000355243683,
+            "measured": true
+        },
+        {
+            "id": 7,
+            "x": 0.0856349915266037,
+            "y": 1.4266059398651124,
+            "z": -2.3080527782440187,
+            "yawDegrees": 89.72096252441406,
+            "sizeMeters": 0.09440000355243683,
+            "measured": true
+        },
+        {
+            "id": 9,
+            "x": -4.516809940338135,
+            "y": 0.8983128070831299,
+            "z": -2.3574142456054689,
+            "yawDegrees": 272.6210021972656,
+            "sizeMeters": 0.09440000355243683,
+            "measured": true
+        }
+    ],
+    "learnUnlistedTags": true,
+    "defaultTagSizeMeters": 0.09440000355243683
 }
