@@ -243,6 +243,8 @@ public static class SharedARQuestSetup
         var markers = room.AddComponent<RoomTagMarkers>();
         SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
 
+        SharedARMarkers.AddReferenceMarker(anchor, AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/ReferenceMarker.mat"));
+
         var input = localizer.gameObject.AddComponent<QuestRoomInput>();
         SetField(input, "roomAnchor", anchor);
         SetField(input, "statusText", status);

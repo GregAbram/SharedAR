@@ -200,6 +200,10 @@ public static class SharedARSetup
         var markers = room.AddComponent<RoomTagMarkers>();
         SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
 
+        if (!survey)
+        {
+            SharedARMarkers.AddReferenceMarker(anchor, AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/ReferenceMarker.mat"));
+        }
         if (survey)
         {
             var ui = new GameObject("UI").AddComponent<PhoneSurveyUI>();
