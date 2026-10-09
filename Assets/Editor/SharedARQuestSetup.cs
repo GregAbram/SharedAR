@@ -30,6 +30,7 @@ public static class SharedARQuestSetup
     public static readonly string[] QuestScenes =
     {
         "Assets/Scenes/Quest/Quest Room.unity",
+        "Assets/Scenes/Quest/Quest Survey.unity",
         "Assets/Scenes/Quest/Quest AprilTags.unity",
     };
 
@@ -52,7 +53,8 @@ public static class SharedARQuestSetup
         ConfigureXR();
         ApplyMetaProjectSetupFixes();
         CreateQuestRoomSceneIfMissing(QuestScenes[0]);
-        CreateQuestSceneIfMissing(QuestScenes[1]);
+        CreateQuestSurveySceneIfMissing(QuestScenes[1]);
+        CreateQuestSceneIfMissing(QuestScenes[2]);
         // Build And Run in the editor uses this list; the iOS build passes its own.
         EditorBuildSettings.scenes = Array.ConvertAll(QuestScenes, path => new EditorBuildSettingsScene(path, true));
         AssetDatabase.SaveAssets();
@@ -242,6 +244,45 @@ public static class SharedARQuestSetup
         SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
 
         var input = localizer.gameObject.AddComponent<QuestRoomInput>();
+        SetField(input, "roomAnchor", anchor);
+        SetField(input, "statusText", status);
+        SetField(input, "head", centerEye);
+
+        EditorSceneManager.SaveScene(scene, path);
+        Debug.Log($"[SharedARQuestSetup] Created {path}");
+    }
+
+    // A starting point only; once it exists the scene is edited by hand.
+    // RoomAnchor in survey mode: anchor on the first tag with a pose in the
+    // config, learn every other tag, save a room_config.json listing them all.
+    private static void CreateQuestSurveySceneIfMissing(string path)
+    {
+        if (File.Exists(path))
+        {
+            return;
+        }
+        var scene = NewScene(path);
+        var (centerEye, localizer, status) = CreateRigAndLocalizer(scene);
+
+        var room = new GameObject("Room");
+        var anchor = room.AddComponent<RoomAnchor>();
+        SetField(anchor, "localizer", localizer);
+        var anchorSo = new SerializedObject(anchor);
+        anchorSo.FindProperty("surveyMode").boolValue = true;
+        // Its own learned file, so a survey never mixes with a Room scene's learning.
+        anchorSo.FindProperty("learnedFileName").stringValue = "survey_tags.json";
+        anchorSo.ApplyModifiedPropertiesWithoutUndo();
+        CreatePost("Origin").transform.SetParent(room.transform, false);
+
+        var template = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        template.name = "Tag Marker Template";
+        template.transform.localScale = Vector3.one * 0.04f;
+        UnityEngine.Object.DestroyImmediate(template.GetComponent<Collider>());
+        template.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TagCube.mat");
+        var markers = room.AddComponent<RoomTagMarkers>();
+        SetField(markers, "markerTemplate", template.GetComponent<Renderer>());
+
+        var input = localizer.gameObject.AddComponent<QuestSurveyInput>();
         SetField(input, "roomAnchor", anchor);
         SetField(input, "statusText", status);
         SetField(input, "head", centerEye);

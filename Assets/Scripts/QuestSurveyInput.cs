@@ -4,29 +4,21 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Quest controls for the background-scanning RoomAnchor scene: A = scan at full
-// rate now, B = forget this session's observations (re-anchor), X = forget all
-// learned tag positions, Y = switch scene. The anchor's
-// status floats in front of the headset and follows the head smoothly.
-public class QuestRoomInput : MonoBehaviour
+// Quest controls for the survey scene (RoomAnchor in survey mode): A = scan at
+// full rate now, B = re-anchor, X = forget learned tags (start the survey over),
+// right trigger = save the surveyed room_config.json, Y = switch scene. Status
+// floats in front of the headset and follows the head smoothly.
+public class QuestSurveyInput : MonoBehaviour
 {
     [SerializeField] private RoomAnchor roomAnchor;
     [SerializeField] private TextMeshPro statusText;
     [SerializeField] private Transform head;
-    [SerializeField] private string otherSceneName = "Quest Survey";
+    [SerializeField] private string otherSceneName = "Quest AprilTags";
     [SerializeField] private float textDistance = 1.2f;
     [SerializeField] private float textDrop = 0.25f;
     [SerializeField] private float followSpeed = 3f;
 
-    private void OnEnable()
-    {
-        roomAnchor.Localized += OnLocalized;
-    }
-
-    private void OnDisable()
-    {
-        roomAnchor.Localized -= OnLocalized;
-    }
+    private string saveMessage = "";
 
     private void Awake()
     {
@@ -45,19 +37,26 @@ public class QuestRoomInput : MonoBehaviour
         if (OVRInput.GetDown(OVRInput.Button.Two))
         {
             roomAnchor.ClearTags();
+            saveMessage = "";
             StartCoroutine(Pulse(0.3f, 0.05f));
         }
         if (OVRInput.GetDown(OVRInput.Button.Three))
         {
             roomAnchor.ForgetLearnedTags();
+            saveMessage = "";
             StartCoroutine(Pulse(0.3f, 0.05f));
+        }
+        if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            Save();
         }
         if (OVRInput.GetDown(OVRInput.Button.Four))
         {
             SceneManager.LoadScene(otherSceneName);
         }
 
-        statusText.text = "A: scan now   B: re-anchor   X: forget learned   Y: other scene\n" + roomAnchor.StatusText;
+        statusText.text = "SURVEY   A: scan now   B: re-anchor   X: start over   Trigger: save   Y: other scene\n" +
+                          roomAnchor.StatusText + saveMessage;
 
         // Ease toward a point in front of and slightly below the eyes, facing them.
         var forward = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
@@ -67,16 +66,19 @@ public class QuestRoomInput : MonoBehaviour
         statusText.transform.rotation = Quaternion.LookRotation(statusText.transform.position - head.position, Vector3.up);
     }
 
-    private bool wasProvisional = true;
-
-    // A firm pulse when the room becomes anchored.
-    private void OnLocalized(RoomAnchor anchor)
+    private void Save()
     {
-        if (wasProvisional && anchor.IsAnchored)
+        if (!roomAnchor.IsAnchored)
         {
-            StartCoroutine(Pulse(1f, 0.15f));
+            saveMessage = "\nNot saved: the room isn't anchored yet.";
+            StartCoroutine(Pulse(0.3f, 0.05f));
+            return;
         }
-        wasProvisional = !anchor.IsAnchored;
+        var (path, tags) = roomAnchor.SaveSurveyedConfig();
+        saveMessage = tags < 2
+            ? $"\nSaved only {tags} tag - learn at least one more before using it."
+            : $"\nSaved {tags} tags to {System.IO.Path.GetFileName(path)}; used from the next start.";
+        StartCoroutine(Pulse(1f, 0.15f));
     }
 
     private static IEnumerator Pulse(float amplitude, float seconds)
